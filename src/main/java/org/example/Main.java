@@ -32,6 +32,11 @@ public class Main {
     private final CityDAO cityDAO;
     private final CountryDAO countryDAO;
 
+    private final static List<Integer> TEST_IDS =
+            List.of(3605, 3962, 2009, 107, 3005, 2854, 1348, 2067, 2928, 547, 123, 2383, 2914, 367, 1237, 2732,
+                    3457, 2285, 540, 1390, 1734, 3189, 1188, 1213, 2038, 2847, 1186, 1234, 3842, 3602, 2408, 2397,
+                    971, 1763, 352, 185, 2425, 1505, 1586, 833, 1847, 2675, 344, 894, 1835, 2805, 401, 3999);
+
     public Main() {
         this.sessionFactory = HibernateUtil.getSessionFactory();
         this.redisClient = prepareRedisClient();
@@ -48,14 +53,12 @@ public class Main {
 
         main.sessionFactory.getCurrentSession().close();
 
-        List<Integer> ids = List.of(16, 3212, 414, 39, 666, 318, 1549, 2996, 21, 212);
-
         long startRedis = System.currentTimeMillis();
-        main.testRedisData(ids);
+        main.testRedisData();
         long stopRedis = System.currentTimeMillis();
 
         long startMysql = System.currentTimeMillis();
-        main.testMysqlData(ids);
+        main.testMysqlData();
         long stopMysql = System.currentTimeMillis();
 
         System.out.printf("%s:\t%d ms\n", "Redis", (stopRedis - startRedis));
@@ -141,10 +144,10 @@ public class Main {
             }
         }
     }
-    private void testRedisData(List<Integer> ids) {
+    private void testRedisData() {
         try (StatefulRedisConnection<String, String> connection = redisClient.connect()) {
             RedisStringCommands<String, String> sync = connection.sync();
-            for (Integer id : ids) {
+            for (Integer id : TEST_IDS) {
                 String value = sync.get(String.valueOf(id));
                 try {
                     mapper.readValue(value, CityCountry.class);
@@ -155,10 +158,10 @@ public class Main {
         }
     }
 
-    private void testMysqlData(List<Integer> ids) {
+    private void testMysqlData() {
         try (Session session = sessionFactory.getCurrentSession()) {
             session.beginTransaction();
-            for (Integer id : ids) {
+            for (Integer id : TEST_IDS) {
                 CityEntity city = cityDAO.getById(id);
                 Set<CountryLanguageEntity> languages = city.getCountry().getLanguages();
             }
